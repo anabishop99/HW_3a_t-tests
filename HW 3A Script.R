@@ -1,33 +1,8 @@
----
-title: "HW 3a: Penguin t-tests and correlation"
-author: "MSCI 599"
-date: "12/30/2020"
-output: html_document
----
+library(tidyverse)
+library(palmerpenguins)
+library(rstatix)
 
-***
-
-```{r setup, include=FALSE}
-# Put any RMarkdown options you'd like to have throughout the document here
-# These are the options I like to use to make figures smaller and print code output right below the command:
-knitr::opts_chunk$set(fig.width=6, fig.asp = 0.618, collapse=TRUE) 
-```
-
-#### Unit 3: Penguins
-
-#### Homework # 3a t-tests and correlations
-
-#### Skill practice: data exploration, basic statistical diagnostics, t-tests, correlations
-
-***
-
-Use the `palmerpenguins` dataset in R to answer the following questions:
-
-Find literature values of Adelie and Chinstrap body mass. You can use the Encyclopedia of Life https://eol.org/ or find values elsewhere in the literature.
-
-1. Are our observations of Adelie body mass significantly different from the literature?
-
-```{r setup, include=FALSE}
+#Question 1
 adelie = penguins %>%
   filter(species == "Adelie")
 head(adelie)
@@ -41,17 +16,15 @@ dev.off()
 mean(adelie$body_mass_g, na.rm=TRUE)
 sd(adelie$body_mass_g, na.rm=TRUE)
 
-#outlier test 
+#outlier test to check for any outliers
 adelie %>% 
   identify_outliers(body_mass_g)
-#there are no outliers
 
 # Q-Q plot to check normality assumption
 pdf('figures/adelie_qq.pdf', width=7, height=5)
 ggplot(data=adelie) + 
   stat_qq(aes(sample=body_mass_g))
 dev.off()
-#looks good 
 
 #Adelie t-test - used a one sample t-test
 t.test(adelie$body_mass_g, mu=4700) # base r version
@@ -61,16 +34,9 @@ adelie %>%                          #dplyr version
 #Effect size
 adelie %>% cohens_d(body_mass_g ~ 1, mu = 4700)
 
-# p =  5.06e-59, effect size = -2.18.
+# The Adelie body mass was significantly different from the literature, with a p-value of 5.06e-59 and an effect size of -2.18.
 
-knitr::opts_chunk$set(fig.width=6, fig.asp = 0.618, collapse=TRUE) 
-```
-
-The Adelie body mass was significantly different from the literature, with a p-value of 5.06e-59 and an effect size of -2.18.  This is an extremely large effect size, just as we saw in class with the gentoo data.  More research is needed to investigate why these two body mass estimates are so different.  The Palmer data is much lower than the Encyclopedia of Life estimate, which may mean that penguin size is decreasing since the EOL estimate was taken.  However, I personally think more sampling is needed, and that the EOL estimate is likely inaccurate.
-
-2. Are our observations of Chinstrap body mass significantly different from the literature?
-
-```{r setup, include=FALSE}
+#Question 2
 chinstrap = penguins %>%
   filter(species == "Chinstrap")
 head(chinstrap)
@@ -84,7 +50,7 @@ dev.off()
 mean(chinstrap$body_mass_g, na.rm=TRUE)
 sd(chinstrap$body_mass_g, na.rm=TRUE)
 
-#outlier test 
+#outlier test to check for any outliers
 chinstrap %>% 
   identify_outliers(body_mass_g)
 
@@ -95,7 +61,6 @@ ggplot(data=chinstrap) +
 dev.off()
 
 #Chinstrap t-test - used a one sample t-test; body mass comes from: Sanz, J.J. (1995). Field Metabolic Rates of Breeding Chinstrap Penguins (Pygoscelis antarctica) in the South Shetlands. Physiological Zoology, 69(3), 586-598. 
-
 t.test(chinstrap$body_mass_g, mu=3790) # base r version
 chinstrap %>%                          #dplyr version
   t_test(body_mass_g ~ 1, mu=3790)
@@ -103,16 +68,9 @@ chinstrap %>%                          #dplyr version
 #Effect size
 chinstrap %>% cohens_d(body_mass_g ~ 1, mu = 3790)
 
-# p = 0.226, effect size = -0.148.
-knitr::opts_chunk$set(fig.width=6, fig.asp = 0.618, collapse=TRUE) 
-```
+# The Chinstrap body mass was not significantly different from the literature, with a p-value of 0.226 and an effect size of -0.148.
 
-The Chinstrap body mass was not significantly different from the literature, with a p-value of 0.226 and an effect size of -0.148.  This is an exciting result, especially given how inaccurate the EOL estimates seem to be.  I did my own literature search to find an estimate for chinstrap body mass, and the estimate I found in Sanz's 1995 paper seems to be very accurate compared with the Palmer series data.  The effect size is negligible, thereby giving even more confidence to the result.
-
-3. Are Adelie and Chinstrap body masses significantly different from each other?
-
-```{r setup, include=FALSE}
-# used an independent sample t-test
+#Question 3 - used an independent sample t-test
 
 adelie_vs_chinstrap = penguins %>%
   filter(species %in% c("Chinstrap", "Adelie"),
@@ -150,23 +108,17 @@ dev.off()
 adelie_vs_chinstrap %>% levene_test(body_mass_g ~ species)
 
 # t-test
-t.test(adelie_vs_chinstrap$body_mass_g ~ adelie_vs_chinstrap$species) # base R
+t.test(adelie_vs_chinstrap$body_mass_g ~ adelie_vs_chinstrap$species) # base R 
+
 adelie_vs_chinstrap %>% 
   t_test(body_mass_g~species) # dplyr version
 
-# p = 0.588
+# p = 0.588; must accept the null hypothesis that the two masses are not significantly different
 
 #effect size - -0.0766; negligible
 adelie_vs_chinstrap %>% cohens_d(body_mass_g~species)
 
-knitr::opts_chunk$set(fig.width=6, fig.asp = 0.618, collapse=TRUE) 
-```
-
-With a p value of 0.588, we must accept the null hypothesis that the two masses are not significantly different.  This means that the two penguins' average body masses are close enough to be considered of similar size, given that they failed to be significantly different.  I bet this makes them mad because each species wants to be a unique, independent penguin. Poor buddies. Anyway, the effect size was found to be -0.0766, which is defined as being negligible.  Therefore, this result lends more confidence to the fact that the two species' body masses are of similar size.
-
-4. What is the correlation between flipper length and body mass with all penguin species combined into a single dataset? 
-
-```{r setup, include=FALSE}
+# Question 4: 
 summary(penguins)
 pdf('figures/flipper_vs_bodymass_all.pdf', height=7, width=5)
 ggplot() + 
@@ -197,14 +149,8 @@ penguins %>%
   select(flipper_length_mm, body_mass_g) %>%
   ggpairs()
 dev.off()
-knitr::opts_chunk$set(fig.width=6, fig.asp = 0.618, collapse=TRUE) 
-```
 
-The correlation between fipper length and body mass for all penguin species combined was 0.87. Given that this value is only 0.13 away from being a perfect correlation, we can see that these two variables have an extremely strong correlation.  This shows that as a penguin's flipper length increases, their body mass will very likely increase too.  This isn't surprising, as we can infer that as a penguin grows, its flipper and body mass will both increase.  
-
-5. What is the correlation between flipper length and body mass for each of the 3 species separately? In which species are these 2 biological metrics least correlated? Most correlated?
-
-```{r setup, include=FALSE}
+#Question 5:
 pdf('figures/flipper_vs_bodymass_species.pdf', height=7, width=5)
 ggplot() + 
   geom_point(aes(x=flipper_length_mm, y=body_mass_g), data=penguins) + 
@@ -250,8 +196,7 @@ penguins %>%
 dev.off()
 
 # most correlated in Gentoo, least correlated in Adelie
-knitr::opts_chunk$set(fig.width=6, fig.asp = 0.618, collapse=TRUE) 
-```
 
-Given how strongly flipper length and body mass were for the entire penguin dataset, I was a bit surprised at how low some individual species correlations were.  The correlation coefficient for Adelie penguins was 0.47, 0.70 for Gentoo, and 0.64 for Chinstrap.  There is a large range in these correlations, with a 0.25 difference between the highest and lowest correlation coefficients.  This result is interesting, and may imply that Adelie penguins, who had the lowest correlation between the two variables, may grow differently than Gentoo penguins, who had the highest correlation.  Or, their bodies may be shaped differently.  The figure showing the correlation matrix between all species shows that Adelie penguins are much smaller than Gentoo penguins, and this difference in size and body shape may have contributed to the smaller correlation between flipper length and body mass.
+
+
 
